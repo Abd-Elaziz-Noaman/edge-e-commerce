@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Container, Row, Col, Image } from 'react-bootstrap'
 import { IconContext } from "react-icons"
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from 'react-icons/fa'
@@ -6,6 +6,7 @@ import Facebook from '../img/facebook.svg'
 import Twitter from '../img/twitter.svg'
 
 function Footer() {
+
     return (
         <IconContext.Provider value={{style:{size: "2em", color: "whitesmoke", marginRight:"12px"}, className:"mr-n2"}}>
             <div id="footer">

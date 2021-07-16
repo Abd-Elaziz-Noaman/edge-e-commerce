@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
 import { AiOutlinePlus, AiOutlineMinus } from "react-icons/ai"
 
-function Counter ({idx,handleIncreaseCounter,handleDecreaseCounter}) {
+function Counter ({idx,value,handleIncreaseCounter,handleDecreaseCounter}) {
 
-    const [count, setCount] = useState(1)
+    const [count, setCount] = useState(value)
     
     const countPlus = () => {
         setCount(count + 1)

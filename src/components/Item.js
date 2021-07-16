@@ -10,7 +10,7 @@ function Item(props) {
 
     // let itemPics = [ItemPic1, ItemPic2, ItemPic3, ItemPic4]
 
-    const {itemName, price, image} = props
+    const {itemName, price, image, style} = props
 
     return (
         <div>
@@ -18,6 +18,7 @@ function Item(props) {
                 src={image}
                 alt="Item1"
                 id="item-pic"
+                style={style}
             />
             <br />
             <br />

@@ -686,9 +686,9 @@ export const _getItems = async ()=> {
   // }
 
   try{
-    const { data:{data:{items} }} = await Axios.get("https://evening-falls-32097.herokuapp.com/api/v1/items")
-    console.log(`🚀 ~ file: _DATA.js ~ line 684 ~ const_getItems= ~ data`, items)
-    return {items}
+    const { data:{data:{allItems} }} = await Axios.get("api/v1/items")
+    console.log(`🚀 ~ file: _DATA.js ~ line 684 ~ const_getItems= ~ data`, allItems)
+    return {allItems}
   }
   catch(e){
     console.error(e.message)

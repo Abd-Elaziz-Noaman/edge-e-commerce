@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Container, Image, Row, Col, Button, InputGroup, FormControl, Form, Accordion, Card, Spinner } from 'react-bootstrap'
 import { Link, withRouter } from 'react-router-dom'
+import jwt_decode from "jwt-decode";
 import Axios from "axios"
+import Aos from 'aos'
 import ReactStars from "react-rating-stars-component"
 import NavBar from './NavBar'
 import ItemPic1 from '../img/item_pic1.jpg'
@@ -13,15 +15,22 @@ import Footer from './Footer'
 import Cart from '../img/cart.svg'
 import { AiOutlinePlusCircle, AiOutlineMinusCircle, AiOutlinePlus, AiOutlineMinus } from "react-icons/ai"
 import { BsHeart, BsHeartFill } from 'react-icons/bs'
-import { connect, useSelector } from 'react-redux'
+import { connect, useSelector, useDispatch } from 'react-redux'
 import { colourNameToHex } from '../color-transfer'
+import { increaseCartQty } from '../actions/cart'
 
 
 function ItemPage(props) {
 
-    const items = props.myItems
+    const authedUser = useSelector(state => state.authedUser)
+    let sizeValue
+    let colorValue
+    // let cartQty = 0
+
+    let dispatch = useDispatch()
     
     const [item, setitem] = useState()
+    const [items, setitems] = useState()
     const [pic, setPic] = useState()
 
     // useEffect(() => {
@@ -32,12 +41,29 @@ function ItemPage(props) {
     // },[props.myItem])
 
     useEffect(() => {
+
+        Aos.init({
+            duration: 1500,
+            easing: 'ease'
+        })
+
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        })
+
+        setCount(1)
+
         const getItem = async () => {
+            const user = await jwt_decode(localStorage.getItem('token')).id
             try {
-                const response = await Axios.get(`https://sleepy-lake-90434.herokuapp.com/api/v1/items?_id=${props.match.params.id}`)
+                const response = await Axios.post(`api/v1/items/filter?_id=${props.match.params.id}`, {
+                    owner: user
+                })
                 console.log("🚀 ~ file: ItemPage.js ~ line 37 ~ getItem ~ response", response)
-                const Item = await response.data.data.items[0]
+                const Item = await response.data.data.filteredItems[0]
                 console.log("🚀 ~ file: ItemPage.js ~ line 40 ~ getItem ~ Item", Item)
+                setWish(response.data.favorite)
                 
                 return Item
             }
@@ -54,7 +80,38 @@ function ItemPage(props) {
             await setPic(myItem.images[0])
         }
 
+        const getRecommendedItems = async () => {
+            try {
+                const user = await jwt_decode(localStorage.getItem('token')).id
+                const response = await Axios.post("api/v1/akin", {
+                    owner: user,
+                    samples: "4"
+                })
+                console.log("🚀 ~ file: ItemPage.js ~ line 90 ~ getRecommendedItems ~ response", response)
+                const recommendations = await response.data.recommendations
+                setitems(recommendations)
+
+                // if (recommendations.length) {
+                //     setitems(recommendations)
+                // } else {
+                //     const response = await Axios.get(`api/v1/items/paginate?page=${Math.floor(Math.random() * (12 - 1 + 1)) + 1}&limit=4`)
+                //     console.log("🚀 ~ file: ItemPage.js ~ line 97 ~ getRecommendedItems ~ response", response)
+                //     setitems(response.data.data.paginatedItems)
+                //     console.log("🚀 ~ file: ItemPage.js ~ line 99 ~ getRecommendedItems ~ items", items)
+                // }
+            }
+            catch(e) {
+                console.error(e.message)
+            }
+
+            // const response = await Axios.get(`api/v1/items/paginate?page=${Math.floor(Math.random() * (12 - 1 + 1)) + 1}&limit=4`)
+            // console.log("🚀 ~ file: ItemPage.js ~ line 62 ~ getRecommendedItems ~ response", response)
+            // setitems(response.data.data.paginatedItems)
+            // console.log("🚀 ~ file: ItemPage.js ~ line 64 ~ getRecommendedItems ~ items", items)
+        }
+
         setItem()
+        getRecommendedItems()
         
     },[props.match.params.id])
 
@@ -157,11 +214,63 @@ function ItemPage(props) {
         }
     }
 
-    const handleWish = () => {
-        setWish(!wish)
+    const handleWish = async () => {
+        if (wish === false) {
+            try {
+                const response = await Axios.post("api/v1/favorite", {
+                    owner: authedUser,
+                    items: [
+                        {
+                            itemId: item._id,
+                            itemName: item.itemName,
+                            price: item.Price,
+                            images: item.images,
+                            color: item.availableColors,
+                            size: item.AvailableSizes,
+                            seller: item.Seller,
+                            SubCategory: item.SubCategory
+                        }
+                    ]
+                })
+                console.log("🚀 ~ file: ItemPage.js ~ line 188 ~ handleWish ~ response", response)
+                setWish(true)
+            }
+            catch(e) {
+                console.error(e.message)
+            }
+        }
+        else {
+            try {
+                const response = await Axios.delete("api/v1/favorite", {
+                    data: {
+                        owner: authedUser,
+                        itemId: item._id
+                    }
+                })
+                console.log("🚀 ~ file: ItemPage.js ~ line 202 ~ handleWish ~ response", response)
+                setWish(false)
+            }
+            catch(e) {
+                console.error(e.message)
+            }
+        }
     }
 
-    let Items = [1, 2, 3, 4]
+    const getSizeValue = (e) => {
+        e.preventDefault()
+        sizeValue = e.target.value
+        console.log("🚀 ~ file: ItemPage.js ~ line 170 ~ getSizeValue ~ sizeValue", sizeValue)
+        return sizeValue
+    }
+
+    const getColorValue = (e) => {
+        e.preventDefault()
+        colorValue = e.target.value
+        console.log("🚀 ~ file: ItemPage.js ~ line 177 ~ getColorValue ~ colorValue", colorValue)
+        return colorValue
+    }
+
+    // let Items = [1, 2, 3, 4]
     // let itemColors = ['blue', 'orange', '#D5D9D9', 'pink']
 
     // const items = useSelector(state => state.items)
@@ -182,19 +291,45 @@ function ItemPage(props) {
     // }
 
 
-    const pushItemToCart = (item) => {
-        setcartArr([...cartArr, item])
-        console.log('cartArr', cartArr)
+    const pushItemToCart = async (item) => {
+        // setcartArr([...cartArr, item])
+        // console.log('cartArr', cartArr)
+        try {
+            const addToCartResponse = await Axios.post("api/v1/cart", {
+                owner: authedUser,
+                items: [{
+                    itemId: props.match.params.id,
+                    itemName: item.itemName,
+                    qty: count,
+                    price: item.Price,
+                    images: item.images[0],
+                    color: colorValue,
+                    size: sizeValue,
+                    seller: item.Seller,
+                    SubCategory: item.SubCategory
+                }]
+            })
+            console.log("🚀 ~ file: ItemPage.js ~ line 215 ~ pushItemToCart ~ addToCartResponse", addToCartResponse)
+            document.querySelector("#added-to-cart").style.display= "block"
+            setTimeout(() => {
+                document.querySelector("#added-to-cart").style.display= "none"
+            }, 3000)
+        }
+        catch(e) {
+            console.error(e.message)
+        }
+        // props.increaseCartQty()
+        // cartQty = await cartQty + 1
     }
 
 
     return (
         <div>
-            {(item) ? (
+            {(item && items) ? (
                 <div>
-                    <NavBar wish={wish} cartArr={cartArr} />
+                    <NavBar wish={wish} />
                     <br />
-                    <Container>
+                    <Container data-aos="fade-right">
                         <Row>
                             <Col sm='12' xs='12' md="12" lg='7' >
                                 <br />
@@ -249,7 +384,7 @@ function ItemPage(props) {
                                 <br />
                                 <br />
                                 <h5 className="font-weight-bold text-left">{item.itemName}</h5>
-                                <p className="text-muted text-left">{`By: ${item.seller}`}</p>
+                                <p className="text-muted text-left">{`By: ${item.Seller}`}</p>
                                     
                                 <h5 className="text-dark font-weight-bold mr-5 text-left">{`$${item.Price}`}</h5>
                                 <br />
@@ -262,7 +397,18 @@ function ItemPage(props) {
                                 <p className="text-dark text-left">
                                     {item.detail}
                                 </p>
-                                <h6 className="mr-5 text-left text-muted">{`Size: ${item.sizes}`}</h6>
+                                <h6 className="mr-5 text-left text-muted">
+                                    Size: {item.AvailableSizes.map((size) => (
+                                        <Button 
+                                            id="size-btn"
+                                            name={size}
+                                            value={size}
+                                            onClick={getSizeValue}
+                                        >
+                                            {size}
+                                        </Button>
+                                    ))}
+                                </h6>
                                 <br />
                                 <h6 className="mr-5 text-left">Color: 
                                     <Row>
@@ -270,7 +416,12 @@ function ItemPage(props) {
                                             color = colourNameToHex(color)
                                             return (
                                                 <Col sm={1} xs={1} md={1} key={color}>
-                                                    <div key={color} style={{width:"30px", height:"30px", backgroundColor:`${color}`, marginLeft:"55px", marginTop:"-22px", borderRadius:"1rem", cursor:"pointer"}} />
+                                                    <Button 
+                                                        key={color} 
+                                                        value={color}
+                                                        style={{width:"30px", height:"30px", backgroundColor:`${color}`, marginLeft:"55px", marginTop:"-35px", borderRadius:"1rem", cursor:"pointer", border:'none'}}
+                                                        onClick={getColorValue}
+                                                    />
                                                 </Col>
                                             )
                                         })}
@@ -298,6 +449,18 @@ function ItemPage(props) {
                                             style={{width:"300px", height:"50px", fontWeight:"bold", fontSize:"20px", marginTop:"50px", backgroundColor:"black"}}
                                             onClick={() => pushItemToCart(item)}
                                         >ADD TO CART</Button>
+                                        <p 
+                                            id="added-to-cart"
+                                            style={{
+                                                color:'green',
+                                                fontSize:'20px', 
+                                                letterSpacing:'3px',
+                                                marginTop:'10px',
+                                                marginLeft:'40px',
+                                                marginBottom:'-10px',
+                                                display: 'none'
+                                            }}
+                                        >ADDED TO CART!</p>
                                     </Col>
                                 </Row>
                                 <br />
@@ -322,21 +485,26 @@ function ItemPage(props) {
                                         </Accordion.Toggle>
                                         <Accordion.Collapse eventKey="0">
                                             <Card.Body>
-                                            {/* <h4 className="text-left mb-3">SPECIFICATIONS</h4> */}
-                                            <Row className="ml-1">
-                                                <Col id="specifications-1">
-                                                    <h6 className="text-left mb-3">Brand</h6>
-                                                    <h6 className="text-left mb-3">Release Date</h6>
-                                                    <h6 className="text-left mb-3">Package weight in KGs</h6>
-                                                    <h6 className="text-left mb-3">Fabric Type</h6>
-                                                </Col>
-                                                <Col id="specifications-2">
-                                                    <h6 className="text-left text-muted mb-3">Ravin</h6>
-                                                    <h6 className="text-left text-muted mb-3">2018-02-10</h6>
-                                                    <h6 className="text-left text-muted mb-3">182 grams</h6>
-                                                    <h6 className="text-left text-muted mb-3">Cotton</h6>
-                                                </Col>
-                                            </Row>
+                                                {/* <h4 className="text-left mb-3">SPECIFICATIONS</h4> */}
+                                                <Row className="ml-1">
+                                                    <Col id="specifications-1">
+                                                        <h6 className="text-left mb-3">Brand</h6>
+                                                        <h6 className="text-left mb-3">Release Date</h6>
+                                                        <h6 className="text-left mb-3">Package weight in KGs</h6>
+                                                        <h6 className="text-left mb-3">Fabric Type</h6>
+                                                    </Col>
+                                                    <Col id="specifications-2">
+                                                        <h6 className="text-left text-muted mb-3">{item.Seller}</h6>
+                                                        <h6 className="text-left text-muted mb-3">2021-02-10</h6>
+                                                        <h6 className="text-left text-muted mb-3">182 grams</h6>
+                                                        <h6 className="text-left text-muted mb-3">Cotton</h6>
+                                                    </Col>
+                                                </Row>
+                                                <br />
+                                                <h6 
+                                                    className="text-left ml-1" 
+                                                    style={{lineHeight:'25px'}}
+                                                >{item.Description}</h6>
                                             </Card.Body>
                                         </Accordion.Collapse>
                                     </Card>
@@ -444,21 +612,18 @@ function ItemPage(props) {
                     <br />
                     <br /> */}
 
-                    <Container fluid>
+                    <Container fluid data-aos="flip-down">
                         <h4 className="text-center">YOU MAY ALSO LIKE</h4>
                         <br />
                         <br />
                         {item &&
                             <div>
                                 <Row className="ml-2 mr-2">
-                                    {Items.map((i) => {
-                                        let itemm = items[Math.floor(Math.random() * items.length)]
-                                        console.log("🚀 ~ file: ItemPage.js ~ line 454 ~ {Items.map ~ itemm", itemm)
-                                        console.log("🚀 ~ file: ItemPage.js ~ line 455 ~ {Items.map ~ items", items)
+                                    {items.map((item) => {
                                         return (
-                                            <Col key={i} className="ml-3"> 
-                                                <Link to={`/item/${itemm._id}`} style={{color:"inherit", textDecoration:"none", cursor:"pointer"}}>
-                                                    <Item itemName={itemm.itemName} price={itemm.Price} image={itemm.images[0]} />
+                                            <Col key={item._id} className="ml-3"> 
+                                                <Link to={`/item/${item._id}`} style={{color:"inherit", textDecoration:"none", cursor:"pointer"}}>
+                                                    <Item itemName={item.itemName} price={item.Price} image={item.images[0]} />
                                                 </Link>
                                             </Col>
                                         )
@@ -480,16 +645,13 @@ function ItemPage(props) {
     )
 }
 
+// function mapDispatchToProps (dispatch) {
+//     return {
+//         increaseCartQty: () => dispatch(increaseCartQty())
+//     }
+// }
 
-function mapStateToProps ({ items }, props) {
-    const myItems = Object.values(items)
-    console.log('itemssssss', items)
-    return {
-        myItems
-    }
-}
-
-export default connect(mapStateToProps)(ItemPage);
+export default ItemPage;
 
 
 

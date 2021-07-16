@@ -3,10 +3,10 @@ import { getInitialData } from '../Api'
 
 
 export const handleInitialData = () => async (dispatch) => {
-    const {items} = await getInitialData()
-    console.log('items shared', items)
-    dispatch(getItems(items))
-    return {items}
+    const {allItems} = await getInitialData()
+    console.log('items shared', allItems)
+    dispatch(getItems(allItems))
+    return {allItems}
 }
 
 

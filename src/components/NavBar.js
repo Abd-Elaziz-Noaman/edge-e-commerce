@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import {useSpring, animated} from 'react-spring'
 import { Switch, Route, Link, Redirect, useHistory } from 'react-router-dom';
-import { Container, Navbar, Nav, NavDropdown, Form, Button, Image, Dropdown } from 'react-bootstrap'
+import { Container, Navbar, Nav, NavDropdown, Form, Button, Image, Dropdown, Spinner } from 'react-bootstrap'
+import Aos from 'aos'
+import Axios from 'axios'
 import Cart from '../img/cart.svg'
 import UserAvatar from '../img/user_avatar.svg'
-import { connect } from 'react-redux'
+import { connect, useSelector } from 'react-redux'
 import { setAuthedUser } from '../actions/authedUser'
 import { BsSearch, BsHeart, BsHeartFill } from 'react-icons/bs'
-import { FaUser } from 'react-icons/fa'
+import { FaUser, FaRegUser } from 'react-icons/fa'
 import { HiOutlineShoppingBag } from 'react-icons/hi'
+import { getCartQty } from '../actions/cart'
 
 
 function NavBar(props) {
@@ -28,12 +31,32 @@ function NavBar(props) {
     // }
 
     const [showDropdown, setShowDropdown] = useState(false);
+    const [cartQuantity, setcartQuantity] = useState(0)
 
     let history = useHistory()
 
+    const authedUser = useSelector(state => state.authedUser)
+
     useEffect(() => {
+
+        Aos.init({
+            duration: 1500,
+            easing: 'ease'
+        })
+
+        const getCartQuantity = async (dispatch) => {
+            const response = await Axios.get(`api/v1/cart/qty?owner=${authedUser}`)
+            console.log("🚀 ~ file: NavBar.js ~ line 47 ~ getCartQuantity ~ response", response)
+            props.getCartQty(response.data.quantity)
+            setcartQuantity(response.data.quantity)
+            console.log('cart-quantity', cartQuantity)
+        }
+
+        getCartQuantity()
+
+
         console.log('props.cartArr', props.cartArr)
-    })
+    }, [])
 
     const logout = () => {
         props.setAuthedUser(null)
@@ -43,18 +66,20 @@ function NavBar(props) {
 
     return (
         <div>
-            <Navbar bg="light" expand="lg" id="navbar">
-                <Navbar.Brand as={Link} to="/" className="ml-4 text-bold" style={{fontSize:"30px"}}>edge.</Navbar.Brand>
+            <Navbar bg="light" expand="lg" id="navbar" data-aos="fade-down">
+                <Navbar.Brand as={Link} to="/" className="ml-4 text-bold" style={{fontSize:"30px"}} data-aos="zoom-in" data-aos-delay="900">edge.</Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="mr-auto">
                         <Nav.Link as={Link} to="/" className="navText"> HOME</Nav.Link>
                         <NavDropdown title="CATEGORIES" id="basic-nav-dropdown" className="navText">
-                            <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
-                            <NavDropdown.Item href="#action/3.2">Another action</NavDropdown.Item>
-                            <NavDropdown.Item href="#action/3.3">Something</NavDropdown.Item>
+                            <NavDropdown.Item as={Link} to="/category/T-Shirt">T-SHIRT</NavDropdown.Item>
+                            <NavDropdown.Item as={Link} to="/category/Shirt">SHIRTS</NavDropdown.Item>
+                            <NavDropdown.Item as={Link} to="/category/Tops">TOPS</NavDropdown.Item>
+                            <NavDropdown.Item as={Link} to="/category/Tie-Dye">TIE-DYE</NavDropdown.Item>
                             <NavDropdown.Divider />
-                            <NavDropdown.Item href="#action/3.4">Separated link</NavDropdown.Item>
+                            <NavDropdown.Item as={Link} to="/category/Pants">PANTS</NavDropdown.Item>
+                            <NavDropdown.Item as={Link} to="/category/Jeans">JEANS</NavDropdown.Item>
                         </NavDropdown>
                         <Nav.Link href="#link" className="navText">ِABOUT US</Nav.Link>
                         <Nav.Link href="#link" className="navText">CONTACTS</Nav.Link>
@@ -75,29 +100,34 @@ function NavBar(props) {
                                     style={{backgroundColor:'white', border:'none', boxShadow:'none'}}
                                 >
                                     <Nav.Link as={Link} to='/signup' className="d-inline-block">
-                                        <FaUser size="25px" color="black" />
+                                        <FaRegUser size="25px" color="black" />
                                     </Nav.Link>
                                 </Dropdown.Toggle>
 
                                 <Dropdown.Menu show={showDropdown}>
-                                    <Dropdown.Item>
-                                    Profile
+                                    <Dropdown.Item onClick={() => history.push('/profile')}>
+                                        Profile
                                     </Dropdown.Item>
                                     <Dropdown.Item onClick={() => history.push('/orders')}>
-                                    Orders
+                                        Orders
                                     </Dropdown.Item>
+                                    {/* <Dropdown.Item onClick={() => history.push('/admin')}>
+                                        Admin
+                                    </Dropdown.Item> */}
                                     <Dropdown.Item onClick={logout}>
-                                    Logout
+                                        Logout
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
                             </Nav.Link>
-                        <span className="mt-2 mr-1">{props.wish === false ? (<BsHeart size="23px"/>) : (<BsHeartFill size="23px" color="red"/>)}</span>
+                            <Link to='/wishlist' className="mt-2 mr-1">
+                                <span>{props.wish === false ? (<BsHeart size="23px" color="black"/>) : (<BsHeartFill size="23px" color="red"/>)}</span>
+                            </Link>
                         <Nav.Link as={Link} to="/cart" className="mr-1" >
                             <HiOutlineShoppingBag size="30px" color="black" />
-                            { props.cartArr && props.cartArr.length > 0 ? 
+                            { cartQuantity && cartQuantity > 0 ? 
                                 (<div id="cart-items-number">
-                                    <span className="mt-n1"> {props.cartArr.length} </span>
+                                    <span className="mt-n1"> {cartQuantity} </span>
                                 </div>)
                                 :
                                 (<div style={{display:'none'}}></div>)
@@ -112,7 +142,8 @@ function NavBar(props) {
 
 function mapDispatchToProps (dispatch) {
     return {
-      setAuthedUser: (data) => dispatch(setAuthedUser(data))
+      setAuthedUser: (data) => dispatch(setAuthedUser(data)),
+      getCartQty: (data) => dispatch(getCartQty(data))
     }
 }
 

@@ -10,7 +10,14 @@ import middleware from './middleware'
 import { BrowserRouter } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.css'; // or include from a CDN
 import 'react-bootstrap-country-select/dist/react-bootstrap-country-select.css';
+import 'aos/dist/aos.css'
+import Axios from 'axios'
 
+
+// http://192.168.1.7:3000/
+// https://evening-cliffs-75470.herokuapp.com/
+
+Axios.defaults.baseURL= "https://evening-cliffs-75470.herokuapp.com/";
 
 const store = createStore(rootReducer, middleware)
 

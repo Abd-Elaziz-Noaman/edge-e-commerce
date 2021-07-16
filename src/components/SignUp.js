@@ -30,13 +30,19 @@ function SignUp (props) {
             //         Authentication: 'Bearer' + localStorage.getItem('token')
             //     }
             // }
-            const response = await Axios.post("https://whispering-tor-21325.herokuapp.com/api/v1/users/login", loginData)
+            const response = await Axios.post("api/v1/users/login", loginData)
             console.log("🚀 ~ file: signUp.js ~ line 20 ~ handleLoginSubmit ~ response", response)
             localStorage.setItem('token', response.data.token)
+            localStorage.setItem('userRole', response.data.role)
             const authedUserId = await jwt_decode(response.data.token).id
             await props.setAuthedUser(authedUserId)
             setformData({email: "", password: ""})
-            history.push('/')
+
+            if (response.data.role === 'user') {
+                history.push('/')
+            } else {
+                history.push('/admin')
+            }
 
             return loginData;
         }

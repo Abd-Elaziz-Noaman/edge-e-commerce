@@ -3,7 +3,7 @@ import Axios from 'axios'
 import Aos from 'aos'
 import jwt_decode from "jwt-decode";
 import { Container, Carousel, Image, Row, Col, Card , Button , Form, Spinner } from 'react-bootstrap'
-import NavBar from './NavBar'
+import AdminNavbar from './AdminNavbar'
 import Footer from './Footer'
 import Item from './Item'
 import { withRouter } from 'react-router-dom'
@@ -14,7 +14,7 @@ import {FaTshirt} from "react-icons/fa"
 
 
 
-function Orders(props) {
+function AdminUserOrders(props) {
 
     const [userOrders, setuserOrders] = useState()
     
@@ -27,9 +27,10 @@ function Orders(props) {
 
         const getUserOrders = async () => {
             try {
-                const user = await jwt_decode(localStorage.getItem('token')).id
-                const response = await Axios.get(`api/v1/order/getorder?owner=${user}`)
-                console.log("🚀 ~ file: Orderlistfr.js ~ line 22 ~ getUserOrders ~ response", response)
+                // const user = await props.match.params.id
+                // console.log("🚀 ~ file: adminUserOrders.js ~ line 31 ~ getUserOrders ~ user", user)
+                const response = await Axios.get(`api/v1/order/getorder?owner=${props.match.params.id}`)
+                console.log("🚀 ~ file: adminUserOrders.js ~ line 32 ~ getUserOrders ~ response", response)
                 setuserOrders(response.data.data[0].orders)
                 console.log('user-orders', userOrders)
             }
@@ -44,11 +45,12 @@ function Orders(props) {
         <div>
             {userOrders ? (
                 <div>
-                    <NavBar wish={false}/>
+                    <AdminNavbar wish={false}/>
+                    <br />
                     <br />
                     <Container data-aos="fade">
                     <h1 style={{fontWeight:"bold", textAlign:'left'}}>
-                        Orders
+                        Orders for <strong>"{props.match.params.name}"</strong>
                         <FaClipboardList size="35" className="ml-2 mt-n2" />
                     </h1>
                     <br />
@@ -100,5 +102,5 @@ function Orders(props) {
     )
 }
 
-export default withRouter(Orders);
+export default withRouter(AdminUserOrders);
 

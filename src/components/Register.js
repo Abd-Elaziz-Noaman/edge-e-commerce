@@ -24,28 +24,36 @@ import NavBar from './NavBar'
     setformData({...formData, [e.target.name]: e.target.value})
   }
 
-  const handleLoginSubmit = async (e) => {
+  const handleSignUpSubmit = async (e) => {
     try {
         e.preventDefault()
         document.getElementById("reg-spinner").style.display = "block";
         const loginData = await formData
         console.log("🚀 ~ file: signUp.js ~ line 16 ~ handleLoginSubmit ~ loginData", loginData)
-        const response = await Axios.post("https://whispering-tor-21325.herokuapp.com/api/v1/users/signup", {
+        const response = await Axios.post("api/v1/users/signup", {
           name: loginData.name,
           email: loginData.email,
           password: loginData.password,
           passwordConfirm: passwordConfirm
+      }, {
+        headers: { "Content-Type": "application/json" }
       })
         console.log("🚀 ~ file: signUp.js ~ line 20 ~ handleLoginSubmit ~ response", response)
         console.log('token', response.data.token)
         localStorage.setItem('token', response.data.token)
+        localStorage.setItem('userRole', response.data.role)
         const authedUserId = await jwt_decode(response.data.token).id
         console.log("🚀 ~ file: Register.js ~ line 36 ~ handleLoginSubmit ~ authedUserId", authedUserId)
         await props.setAuthedUser(authedUserId)
         console.log('getToken', localStorage.getItem('token'))
         setformData({email: "", password: ""})
         setpasswordConfirm("")
-        history.push('/') 
+
+        if (response.data.role === 'user') {
+            history.push('/')
+        } else {
+            history.push('/admin')
+        }
     
         return loginData;
     }
@@ -59,7 +67,7 @@ import NavBar from './NavBar'
       <div>
           {/* <Image  
           src="https://www.electroniclibrarian.org/wp-content/uploads/2020/11/ERL21-Website-Icons-and-Images-300x200@2x.png"  />   */}
-          <Form className="text-left" onSubmit={handleLoginSubmit}>
+          <Form className="text-left" onSubmit={handleSignUpSubmit}>
 
           <Form.Group>
               <Form.Label>Name</Form.Label>

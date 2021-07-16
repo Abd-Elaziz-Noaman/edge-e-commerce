@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import Axios from 'axios'
 import Aos from 'aos'
-import { withRouter, Link } from 'react-router-dom';
-import { Form, Button, Row, Col, Spinner, Card, Container } from 'react-bootstrap'
-import { IoMdArrowRoundBack, IoIosArrowUp } from 'react-icons/io'
+import { Container, Carousel, Image, Row, Col, Card, Spinner } from 'react-bootstrap'
+import { IoIosArrowUp } from 'react-icons/io'
+import { Link } from 'react-router-dom'
+import NavBar from './NavBar'
 import Footer from './Footer'
 
 
-function SearchBar(props) {
+function SubCategory (props) {
 
-    const [query, setquery] = useState('')
-    const [allItems, setallItems] = useState()
-    const [searchItems, setsearchItems] = useState([])
+    const [filteredItems, setfilteredItems] = useState()
 
     useEffect(() => {
 
@@ -33,70 +32,44 @@ function SearchBar(props) {
 
         window.addEventListener('scroll', ScrollToUpButton);
 
-        const getAllItems = async () => {
+        const getItemsBySubCategory = async () => {
             try {
-                const response = Axios.get("api/v1/items")
-                console.log("🚀 ~ file: SearchBar.js ~ line 14 ~ useEffect ~ response", response)
-                const data = await response.then(res => res)
-                console.log("🚀 ~ file: SearchBar.js ~ line 17 ~ getAllItems ~ data", data)
-                setallItems(data.data.data.allItems)
-                // setsearchItems(data.data.data.allItems)
+                const SubCategory = await props.match.params.subcategory
+                console.log("🚀 ~ file: SubCategory.js ~ line 12 ~ getItemsBySubCategory ~ SubCategory", SubCategory)
+
+                const subCategoryResponse = await Axios.post(`api/v1/items/filter?SubCategory=${SubCategory}`)
+                console.log("🚀 ~ file: SubCategory.js ~ line 13 ~ getItemsBySubCategory ~ subCategoryResponse", subCategoryResponse)
+
+                setfilteredItems(subCategoryResponse.data.data.filteredItems)
+                console.log('FilteredItems', filteredItems)
             }
             catch(e) {
                 console.error(e.message)
             }
         }
 
-        getAllItems()
+        getItemsBySubCategory()
 
         return () => {
             window.removeEventListener('scroll', ScrollToUpButton)
         }
 
-    }, [])
-
-    const getSearchItems = (query) => {
-        // const searchQuery = e.target.value
-        setquery(query)
-        console.log('search-query', query)
-        const mySearch = allItems.filter((item) => item.itemName.toLowerCase().includes(query.toLowerCase()))
-        console.log("🚀 ~ file: SearchBar.js ~ line 35 ~ getSearchItems ~ mySearch", mySearch)
-        setsearchItems(mySearch)
-    }
+    }, [props.match.params.subcategory])
 
     return (
-        <div id="form-block">
-            <Row>
-                <Col sm='2' xs='2' md='1' >
-                    <Button variant='dark' id='back-btn' onClick={() => props.history.goBack()}>
-                        <IoMdArrowRoundBack size='35px' />
-                    </Button>
-                </Col>
-                <Col sm='10' xs='10' md='11' >
-                    <Form>
-                        <Form.Control 
-                            type="text" 
-                            id="search-bar" 
-                            value={query}
-                            placeholder="What are you looking for ?" 
-                            className="text-left" 
-                            onChange={(e) => getSearchItems(e.target.value)}
-                        />
-                    </Form>
-                </Col>
-            </Row>
-            <br />
-            <br />
-            
-            {(searchItems.length > 0 && query !== '') &&
+        <div>
+            {filteredItems ? (
                 <div>
+                    <NavBar wish={false} />
+                    <br />
+                    <br />
                     <Container data-aos="zoom-in">
                         <h4 className="text-left text-muted"> 
-                            {`${searchItems.length} Results for`} &nbsp; <strong className="text-dark">"Search"</strong> 
+                            {`${filteredItems.length} Results for`} &nbsp; <strong className="text-dark">{`"${props.match.params.subcategory}"`}</strong> 
                         </h4>
                         <br />
                         <br />
-                        {searchItems.map((item) => (
+                        {filteredItems.map((item) => (
                             // <div key={item._id} id="filtered-item" >
                             //     <Image alt="item-pic" src={item.images[0]} style={{objectFit:'cover', height:'200px', verticalAlign:'text-top'}} />
                             //     <br />
@@ -131,20 +104,13 @@ function SearchBar(props) {
                     >
                         <IoIosArrowUp size="25" color="white" />
                     </span>
+                    <Footer />
                 </div>
-                }
-
+            ) : (
+                <Spinner animation="border" style={{marginTop:"400px"}} />
+            )}
         </div>
     )
 }
 
-export default withRouter(SearchBar);
-
-
-// export default React.memo(withRouter(SearchBar), (props, nextProps)=> {
-//     console.log('prevState', props.query)
-//     if(props.query === nextProps.query) {
-//         // don't re-render/update
-//         return true
-//     }
-// });
+export default SubCategory;

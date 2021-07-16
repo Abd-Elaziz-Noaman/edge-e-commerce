@@ -10,8 +10,8 @@ export const getInitialData= async ()=>{
                     items
                 }
             } ); */
-    const {items} = await _getItems()
-    console.log('items Api', items)
+    const {allItems} = await _getItems()
+    console.log('items Api', allItems)
 
-    return {items}
+    return {allItems}
 }
